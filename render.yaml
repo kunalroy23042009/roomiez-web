@@ -14,8 +14,8 @@ services:
       - key: NODE_VERSION
         value: 24.19.0
       - key: NEXT_PUBLIC_API_BASE_URL
-        # Production FastAPI backend. Correct it if your roomiez-api URL differs.
-        value: https://roomiez-api.onrender.com/api/v1
+        # Production FastAPI backend (Render service "Roomiez").
+        value: https://roomiez.onrender.com/api/v1
       - key: NEXT_PUBLIC_SUPABASE_URL
         value: https://spjbddwturcqpgecshqf.supabase.co
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
