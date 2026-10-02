@@ -24,15 +24,19 @@ function CallbackInner() {
         setMessage(`Sign-in failed: ${oauthError}`);
         return;
       }
-      const code = params.get("code");
-      if (!code) {
-        setMessage("No sign-in code found. Please try again.");
-        return;
-      }
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error) {
-        setMessage(error.message);
-        return;
+      // The client auto-detects a session from the redirect URL on load.
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        const code = params.get("code");
+        if (!code) {
+          setMessage("No sign-in code found. Please try again.");
+          return;
+        }
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          setMessage(error.message);
+          return;
+        }
       }
       try {
         await syncProfile();
