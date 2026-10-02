@@ -31,11 +31,13 @@ export default function FavoritesPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-3xl font-bold">Favorites</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">
+        Favorites
+      </h1>
       {loading ? (
         <p className="mt-4 text-muted">Loading…</p>
       ) : message ? (
-        <div className="mt-4 rounded-2xl bg-white p-6">
+        <div className="mt-4 rounded-2xl border border-navy/10 bg-white p-6">
           <p className="text-muted">{message}</p>
           <Link href="/login" className="mt-2 inline-block underline">
             Log in to see favorites

@@ -3,7 +3,9 @@ import Link from "next/link";
 export default function SupportPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-bold">Support</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">
+        Support
+      </h1>
       <p className="mt-1 text-muted">
         Stuck somewhere? Start here, or write to us directly.
       </p>

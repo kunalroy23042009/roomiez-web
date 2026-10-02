@@ -54,7 +54,9 @@ export default function ThreadPage() {
       <Link href="/app/chats" className="text-sm text-muted hover:text-navy">
         ← All chats
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">Chat</h1>
+      <h1 className="mt-2 font-display text-2xl font-bold tracking-tight">
+        Chat
+      </h1>
       {message && <p className="mt-2 text-sm text-muted">{message}</p>}
       <div className="mt-4 flex min-h-64 flex-col gap-2 rounded-2xl border border-navy/10 bg-white p-4">
         {messages.length === 0 ? (
@@ -85,13 +87,9 @@ export default function ThreadPage() {
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Type a message…"
           maxLength={2000}
-          className="flex-1 rounded-xl border border-navy/15 bg-white px-3 py-2"
+          className="field flex-1"
         />
-        <button
-          type="submit"
-          disabled={sending}
-          className="rounded-xl bg-navy px-5 py-2 font-semibold text-white hover:bg-navy-light disabled:opacity-60"
-        >
+        <button type="submit" disabled={sending} className="btn-primary">
           Send
         </button>
       </form>

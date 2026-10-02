@@ -45,14 +45,16 @@ export default function LeadsPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-3xl font-bold">My leads</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">
+        My leads
+      </h1>
       <p className="mt-1 text-muted">
         Every contact reveal and visit request, tracked to move-in.
       </p>
       {loading ? (
         <p className="mt-4 text-muted">Loading…</p>
       ) : message && leads.length === 0 ? (
-        <div className="mt-4 rounded-2xl bg-white p-6">
+        <div className="mt-4 rounded-2xl border border-navy/10 bg-white p-6">
           <p className="text-muted">{message}</p>
           <Link href="/login" className="mt-2 inline-block underline">
             Log in to see your leads

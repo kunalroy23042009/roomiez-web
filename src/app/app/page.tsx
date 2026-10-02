@@ -36,7 +36,9 @@ export default function BrowsePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-3xl font-bold">Browse rooms</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">
+        Browse rooms
+      </h1>
       <p className="mt-1 text-muted">
         Verified student rooms near campus. Pilot: Adityapur–Jamshedpur.
       </p>
@@ -58,7 +60,7 @@ export default function BrowsePage() {
       </div>
 
       {demo && (
-        <p className="mt-4 rounded-xl bg-peach/40 px-4 py-3 text-sm">
+        <p className="mt-4 rounded-xl border border-peach/30 bg-peach/15 px-4 py-3 text-sm">
           Demo data — {error} Start the FastAPI backend and log in for live
           listings.
         </p>
@@ -73,26 +75,26 @@ export default function BrowsePage() {
       >
         <input
           placeholder="Locality (e.g. Adityapur)"
-          className="rounded-xl border border-navy/15 px-3 py-2"
+          className="field"
           value={filters.locality ?? ""}
           onChange={(e) => update("locality", e.target.value)}
         />
         <input
           placeholder="Min rent"
           inputMode="numeric"
-          className="rounded-xl border border-navy/15 px-3 py-2"
+          className="field"
           value={filters.min_rent ?? ""}
           onChange={(e) => update("min_rent", e.target.value)}
         />
         <input
           placeholder="Max rent"
           inputMode="numeric"
-          className="rounded-xl border border-navy/15 px-3 py-2"
+          className="field"
           value={filters.max_rent ?? ""}
           onChange={(e) => update("max_rent", e.target.value)}
         />
         <select
-          className="rounded-xl border border-navy/15 bg-white px-3 py-2"
+          className="field"
           value={filters.room_type ?? ""}
           onChange={(e) => update("room_type", e.target.value)}
         >
@@ -103,10 +105,7 @@ export default function BrowsePage() {
             </option>
           ))}
         </select>
-        <button
-          type="submit"
-          className="rounded-xl bg-navy px-4 py-2 font-semibold text-white hover:bg-navy-light"
-        >
+        <button type="submit" className="btn-primary w-full">
           Search
         </button>
       </form>

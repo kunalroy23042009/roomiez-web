@@ -68,7 +68,9 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-12">
-      <h1 className="text-3xl font-bold">Student login</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">
+        Student login
+      </h1>
       <p className="mt-1 text-muted">
         Log in to reveal owner contacts, request visits and chat.
       </p>
@@ -78,7 +80,7 @@ export default function LoginPage() {
           <button
             onClick={signInWithGoogle}
             disabled={busy}
-            className="w-full rounded-xl border-2 border-navy px-4 py-2 font-semibold hover:bg-navy hover:text-white disabled:opacity-60"
+            className="btn-outline w-full"
           >
             Continue with Google
           </button>
@@ -93,7 +95,7 @@ export default function LoginPage() {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-navy/15 px-3 py-2"
+            className="field"
           />
           <input
             type="password"
@@ -101,13 +103,9 @@ export default function LoginPage() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-navy/15 px-3 py-2"
+            className="field"
           />
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-xl bg-navy px-4 py-2 font-semibold text-white hover:bg-navy-light disabled:opacity-60"
-          >
+          <button type="submit" disabled={busy} className="btn-primary w-full">
             Log in
           </button>
         </form>
@@ -126,12 +124,9 @@ export default function LoginPage() {
               placeholder="Paste access token (dev)"
               value={devToken}
               onChange={(e) => setDevToken(e.target.value)}
-              className="w-full rounded-xl border border-navy/15 px-3 py-2"
+              className="field"
             />
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-navy px-4 py-2 font-semibold text-white hover:bg-navy-light"
-            >
+            <button type="submit" className="btn-primary w-full">
               Save token & continue
             </button>
           </form>

@@ -22,14 +22,14 @@ export default function ChatsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-3xl font-bold">Chats</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">Chats</h1>
       <p className="mt-1 text-muted">
         One thread per room enquiry, opened from a lead.
       </p>
       {loading ? (
         <p className="mt-4 text-muted">Loading…</p>
       ) : message && convs.length === 0 ? (
-        <div className="mt-4 rounded-2xl bg-white p-6">
+        <div className="mt-4 rounded-2xl border border-navy/10 bg-white p-6">
           <p className="text-muted">{message}</p>
           <Link href="/login" className="mt-2 inline-block underline">
             Log in to see chats

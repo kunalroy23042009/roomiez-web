@@ -18,12 +18,19 @@ export default function FeaturedRooms() {
 
   if (!ready) {
     return (
-      <div className="grid gap-5 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-3" aria-hidden="true">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="h-72 animate-pulse rounded-2xl border border-navy/10 bg-white"
-          />
+            className="animate-pulse overflow-hidden rounded-2xl border border-navy/10 bg-white"
+          >
+            <div className="aspect-[4/3] w-full bg-cream-dark" />
+            <div className="space-y-2 p-4">
+              <div className="h-3 w-1/3 rounded bg-cream-dark" />
+              <div className="h-5 w-5/6 rounded bg-cream-dark" />
+              <div className="h-6 w-1/2 rounded bg-cream-dark" />
+            </div>
+          </div>
         ))}
       </div>
     );

@@ -22,12 +22,14 @@ export default function MapPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-3xl font-bold">Rooms near you</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">
+        Rooms near you
+      </h1>
       <p className="mt-1 text-muted">
         Pins around Adityapur–Jamshedpur. Tap a price to preview the room.
       </p>
       {demo && !loading && (
-        <p className="mt-4 rounded-xl bg-peach/40 px-4 py-3 text-sm">
+        <p className="mt-4 rounded-xl border border-peach/30 bg-peach/15 px-4 py-3 text-sm">
           Demo pins — log in with the backend running for live locations.
         </p>
       )}

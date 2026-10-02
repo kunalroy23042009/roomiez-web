@@ -21,7 +21,7 @@ export default function RoomCard({ room }: { room: Room }) {
           <img
             src={photo}
             alt={room.title}
-            className="h-48 w-full object-cover"
+            className="aspect-[4/3] w-full object-cover"
           />
         ) : (
           <div className="blueprint-grid flex h-48 w-full items-center justify-center font-mono text-xs tracking-widest text-muted">
@@ -37,7 +37,7 @@ export default function RoomCard({ room }: { room: Room }) {
           {room.locality.toUpperCase()}
           {room.area ? ` · ${room.area.toUpperCase()}` : ""}
         </p>
-        <h3 className="mt-1 font-display text-lg font-semibold leading-snug group-hover:underline">
+        <h3 className="mt-1 line-clamp-2 min-h-[3.5rem] font-display text-lg font-semibold leading-snug group-hover:underline">
           {room.title}
         </h3>
         <p className="mt-2 font-display text-xl font-bold">

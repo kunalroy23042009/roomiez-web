@@ -35,6 +35,20 @@ body {
   background-size: 28px 28px;
 }
 
+/* Shared controls — one height, one radius, one border language. */
+.field {
+  @apply h-11 w-full rounded-xl border border-navy/15 bg-white px-3 text-[15px] text-navy placeholder:text-muted/60;
+}
+.btn-primary {
+  @apply inline-flex h-11 items-center justify-center rounded-xl bg-navy px-5 font-semibold text-white hover:bg-navy-light disabled:opacity-60;
+}
+.btn-outline {
+  @apply inline-flex h-11 items-center justify-center rounded-xl border-2 border-navy px-5 font-semibold hover:bg-navy hover:text-white disabled:opacity-60;
+}
+.btn-soft {
+  @apply inline-flex h-11 items-center justify-center rounded-xl border border-navy/15 bg-cream px-5 font-semibold hover:bg-cream-dark disabled:opacity-60;
+}
+
 ::selection {
   background: var(--color-navy);
   color: var(--color-cream);

@@ -104,7 +104,10 @@ export default function Home() {
       </section>
 
       {/* Verification — a real sequence, so numbered */}
-      <section id="verify" className="border-y border-navy/10 bg-white">
+      <section
+        id="verify"
+        className="scroll-mt-20 border-y border-navy/10 bg-white"
+      >
         <div className="mx-auto max-w-6xl px-4 py-16">
           <p className="font-mono text-xs tracking-[0.2em] text-peach-dark">
             PROTOCOL V-3 · APPLIES TO EVERY LISTING

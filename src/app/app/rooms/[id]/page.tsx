@@ -172,14 +172,16 @@ export default function RoomDetailPage() {
         ← All rooms
       </Link>
       {demo && (
-        <p className="mt-3 rounded-xl bg-peach/40 px-4 py-3 text-sm">
+        <p className="mt-3 rounded-xl border border-peach/30 bg-peach/15 px-4 py-3 text-sm">
           Demo room — connect the FastAPI backend and log in for live data and
           contact reveal.
         </p>
       )}
 
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
-        <h1 className="text-3xl font-bold">{room.title}</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">
+          {room.title}
+        </h1>
         {!demo && (
           <button
             onClick={toggleFav}
@@ -203,7 +205,7 @@ export default function RoomDetailPage() {
               key={p}
               src={p}
               alt={room.title}
-              className="h-64 w-full rounded-2xl object-cover"
+              className="aspect-[4/3] w-full rounded-2xl object-cover"
             />
           ))}
         </div>
@@ -253,7 +255,7 @@ export default function RoomDetailPage() {
             <button
               onClick={revealContact}
               disabled={busy}
-              className="mt-3 w-full rounded-xl bg-navy px-4 py-2 font-semibold text-white hover:bg-navy-light disabled:opacity-60"
+              className="btn-primary mt-3 w-full"
             >
               Reveal owner contact
             </button>
@@ -264,13 +266,13 @@ export default function RoomDetailPage() {
               type="datetime-local"
               value={slot}
               onChange={(e) => setSlot(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-navy/15 px-3 py-2"
+              className="field mt-1"
             />
           </label>
           <button
             onClick={requestVisit}
             disabled={busy}
-            className="mt-2 w-full rounded-xl border-2 border-navy px-4 py-2 font-semibold hover:bg-navy hover:text-white disabled:opacity-60"
+            className="btn-outline mt-2 w-full"
           >
             Request visit
           </button>
@@ -278,7 +280,7 @@ export default function RoomDetailPage() {
             <button
               onClick={startChat}
               disabled={busy}
-              className="mt-2 w-full rounded-xl bg-cream px-4 py-2 font-semibold hover:bg-cream-dark disabled:opacity-60"
+              className="btn-soft mt-2 w-full"
             >
               Chat about this room
             </button>
@@ -310,7 +312,7 @@ export default function RoomDetailPage() {
             <select
               value={rating}
               onChange={(e) => setRating(e.target.value)}
-              className="rounded-xl border border-navy/15 bg-white px-3 py-2"
+              className="field sm:w-auto"
               aria-label="Rating"
             >
               {[5, 4, 3, 2, 1].map((n) => (
@@ -324,12 +326,9 @@ export default function RoomDetailPage() {
               onChange={(e) => setReviewBody(e.target.value)}
               placeholder="What did you think of this room? (needs login)"
               maxLength={2000}
-              className="flex-1 rounded-xl border border-navy/15 px-3 py-2"
+              className="field flex-1"
             />
-            <button
-              type="submit"
-              className="rounded-xl bg-navy px-5 py-2 font-semibold text-white hover:bg-navy-light"
-            >
+            <button type="submit" className="btn-primary">
               Post
             </button>
           </form>
