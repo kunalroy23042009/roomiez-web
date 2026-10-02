@@ -1,0 +1,22 @@
+# Render blueprint for the Roomiez website + web app.
+# Deploy: push this folder to GitHub -> Render dashboard -> New -> Blueprint -> connect repo.
+# Secrets (sync: false) are filled in the Render dashboard, never in git.
+# NOTE: only browser-safe NEXT_PUBLIC_* values live here. Server secrets
+# (DATABASE_URL, SERVICE_ROLE, Cloudinary) stay in the roomiez-api service.
+services:
+  - type: web
+    name: roomiez-web
+    runtime: node
+    plan: free
+    buildCommand: npm install; npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: NEXT_PUBLIC_API_BASE_URL
+        # Production FastAPI backend. Correct it if your roomiez-api URL differs.
+        value: https://roomiez-api.onrender.com/api/v1
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://spjbddwturcqpgecshqf.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false

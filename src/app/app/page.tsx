@@ -1,0 +1,130 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { listRooms, type Room, type RoomFilters } from "@/lib/api";
+import { filterDemoRooms } from "@/lib/demo-rooms";
+import RoomCard, { ROOM_TYPES } from "@/components/RoomCard";
+
+export default function BrowsePage() {
+  const [filters, setFilters] = useState<RoomFilters>({});
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [total, setTotal] = useState(0);
+  const [demo, setDemo] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  async function search(f: RoomFilters) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await listRooms(f);
+      setRooms(res.items);
+      setTotal(res.total);
+      setDemo(false);
+    } catch (e) {
+      // Backend unreachable or unauthenticated: fall back to demo data.
+      const items = filterDemoRooms(f);
+      setRooms(items);
+      setTotal(items.length);
+      setDemo(true);
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Could not reach the Roomiez API. Showing demo rooms.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    search({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function update<K extends keyof RoomFilters>(key: K, value: string) {
+    setFilters((f) => ({ ...f, [key]: value || undefined }));
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <h1 className="text-3xl font-bold">Browse rooms</h1>
+      <p className="mt-1 text-muted">
+        Verified student rooms near campus. Pilot: Adityapur–Jamshedpur.
+      </p>
+
+      {demo && (
+        <p className="mt-4 rounded-xl bg-peach/40 px-4 py-3 text-sm">
+          Demo data — {error} Start the FastAPI backend and log in for live
+          listings.
+        </p>
+      )}
+
+      <form
+        className="mt-6 grid gap-3 rounded-2xl border border-navy/10 bg-white p-4 sm:grid-cols-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          search(filters);
+        }}
+      >
+        <input
+          placeholder="Locality (e.g. Adityapur)"
+          className="rounded-xl border border-navy/15 px-3 py-2"
+          value={filters.locality ?? ""}
+          onChange={(e) => update("locality", e.target.value)}
+        />
+        <input
+          placeholder="Min rent"
+          inputMode="numeric"
+          className="rounded-xl border border-navy/15 px-3 py-2"
+          value={filters.min_rent ?? ""}
+          onChange={(e) => update("min_rent", e.target.value)}
+        />
+        <input
+          placeholder="Max rent"
+          inputMode="numeric"
+          className="rounded-xl border border-navy/15 px-3 py-2"
+          value={filters.max_rent ?? ""}
+          onChange={(e) => update("max_rent", e.target.value)}
+        />
+        <select
+          className="rounded-xl border border-navy/15 bg-white px-3 py-2"
+          value={filters.room_type ?? ""}
+          onChange={(e) => update("room_type", e.target.value)}
+        >
+          <option value="">Any type</option>
+          {ROOM_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="rounded-xl bg-navy px-4 py-2 font-semibold text-white hover:bg-navy-light"
+        >
+          Search
+        </button>
+      </form>
+
+      {loading ? (
+        <p className="mt-8 text-muted">Loading rooms…</p>
+      ) : rooms.length === 0 ? (
+        <p className="mt-8 text-muted">
+          No rooms match. Try widening the budget or clearing filters.
+        </p>
+      ) : (
+        <>
+          <p className="mt-6 text-sm text-muted">
+            {total} room{total === 1 ? "" : "s"} found
+          </p>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {rooms.map((r) => (
+              <RoomCard key={r.id} room={r} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
