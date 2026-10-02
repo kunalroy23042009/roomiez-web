@@ -81,9 +81,63 @@ export async function syncProfile(): Promise<unknown> {
   return apiFetch("/auth/sync", { method: "POST", body: JSON.stringify({}) });
 }
 
+export interface Lead {
+  id: string;
+  room_id: string;
+  room_title?: string | null;
+  locality?: string | null;
+  lead_type: string;
+  lead_status: string;
+  visit_slot?: string | null;
+  created_at: string;
+}
+
 export interface ContactLeadResult {
   owner_phone?: string | null;
-  lead?: unknown;
+  lead?: Lead | null;
+}
+
+export interface Favorite {
+  id: string;
+  room_id: string;
+  created_at: string;
+}
+
+export interface Review {
+  id: string;
+  room_id: string;
+  student_name?: string | null;
+  rating: number;
+  body?: string | null;
+  created_at: string;
+}
+
+export interface ReviewSummary {
+  room_id: string;
+  count: number;
+  avg_rating: number | null;
+}
+
+export interface Conversation {
+  id: string;
+  lead_id: string;
+  room_id?: string | null;
+  room_title?: string | null;
+  other_name?: string | null;
+  last_body?: string | null;
+  last_at?: string | null;
+  unread_count: number;
+  created_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversation_id: string;
+  sender_name?: string | null;
+  mine: boolean;
+  body: string;
+  is_read: boolean;
+  created_at: string;
 }
 
 export async function createContactLead(
@@ -98,9 +152,80 @@ export async function createContactLead(
 export async function createVisitLead(
   room_id: string,
   visit_slot: string,
-): Promise<{ lead?: unknown }> {
-  return apiFetch("/leads/visit", {
+): Promise<Lead> {
+  return apiFetch<Lead>("/leads/visit", {
     method: "POST",
     body: JSON.stringify({ room_id, visit_slot }),
   });
+}
+
+export async function listMyLeads(): Promise<Lead[]> {
+  return apiFetch<Lead[]>("/leads/mine");
+}
+
+export async function cancelLead(lead_id: string): Promise<Lead> {
+  return apiFetch<Lead>(`/leads/${lead_id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ lead_status: "CLOSED_LOST" }),
+  });
+}
+
+export async function listMyFavorites(): Promise<Favorite[]> {
+  return apiFetch<Favorite[]>("/favorites/mine");
+}
+
+export async function addFavorite(room_id: string): Promise<Favorite> {
+  return apiFetch<Favorite>(`/favorites/${room_id}`, { method: "POST" });
+}
+
+export async function removeFavorite(room_id: string): Promise<void> {
+  await apiFetch(`/favorites/${room_id}`, { method: "DELETE" });
+}
+
+export async function listReviews(room_id: string): Promise<Review[]> {
+  return apiFetch<Review[]>(`/rooms/${room_id}/reviews`);
+}
+
+export async function reviewSummary(room_id: string): Promise<ReviewSummary> {
+  return apiFetch<ReviewSummary>(`/rooms/${room_id}/reviews/summary`);
+}
+
+export async function postReview(
+  room_id: string,
+  rating: number,
+  body?: string,
+): Promise<Review> {
+  return apiFetch<Review>("/reviews", {
+    method: "POST",
+    body: JSON.stringify({ room_id, rating, body: body || undefined }),
+  });
+}
+
+export async function listConversations(): Promise<Conversation[]> {
+  return apiFetch<Conversation[]>("/conversations/mine");
+}
+
+export async function openConversation(lead_id: string): Promise<Conversation> {
+  return apiFetch<Conversation>("/conversations", {
+    method: "POST",
+    body: JSON.stringify({ lead_id }),
+  });
+}
+
+export async function listMessages(conv_id: string): Promise<ChatMessage[]> {
+  return apiFetch<ChatMessage[]>(`/conversations/${conv_id}/messages`);
+}
+
+export async function sendMessage(
+  conv_id: string,
+  body: string,
+): Promise<ChatMessage> {
+  return apiFetch<ChatMessage>(`/conversations/${conv_id}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ body }),
+  });
+}
+
+export async function markConversationRead(conv_id: string): Promise<void> {
+  await apiFetch(`/conversations/${conv_id}/read`, { method: "PATCH" });
 }

@@ -14,6 +14,12 @@ export default function Navbar() {
             Browse rooms
           </Link>
           <Link
+            href="/app/map"
+            className="hidden sm:inline hover:text-peach-dark"
+          >
+            Map
+          </Link>
+          <Link
             href="/support"
             className="hidden sm:inline hover:text-peach-dark"
           >

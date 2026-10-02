@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { listRooms, type Room, type RoomFilters } from "@/lib/api";
-import { filterDemoRooms } from "@/lib/demo-rooms";
+import Link from "next/link";
+import type { Room, RoomFilters } from "@/lib/api";
+import { loadRooms } from "@/lib/rooms";
 import RoomCard, { ROOM_TYPES } from "@/components/RoomCard";
 
 export default function BrowsePage() {
@@ -16,25 +17,12 @@ export default function BrowsePage() {
   async function search(f: RoomFilters) {
     setLoading(true);
     setError(null);
-    try {
-      const res = await listRooms(f);
-      setRooms(res.items);
-      setTotal(res.total);
-      setDemo(false);
-    } catch (e) {
-      // Backend unreachable or unauthenticated: fall back to demo data.
-      const items = filterDemoRooms(f);
-      setRooms(items);
-      setTotal(items.length);
-      setDemo(true);
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Could not reach the Roomiez API. Showing demo rooms.",
-      );
-    } finally {
-      setLoading(false);
-    }
+    const res = await loadRooms(f);
+    setRooms(res.rooms);
+    setTotal(res.total);
+    setDemo(res.demo);
+    setError(res.demo ? `${res.error} Showing demo rooms.` : null);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -52,6 +40,22 @@ export default function BrowsePage() {
       <p className="mt-1 text-muted">
         Verified student rooms near campus. Pilot: Adityapur–Jamshedpur.
       </p>
+      <div className="mt-3 flex flex-wrap gap-2 text-sm font-medium">
+        {[
+          ["/app/map", "Map"],
+          ["/app/favorites", "Favorites"],
+          ["/app/leads", "My leads"],
+          ["/app/chats", "Chats"],
+        ].map(([href, label]) => (
+          <Link
+            key={href}
+            href={href}
+            className="rounded-full border border-navy/15 bg-white px-4 py-1.5 hover:bg-navy hover:text-white"
+          >
+            {label}
+          </Link>
+        ))}
+      </div>
 
       {demo && (
         <p className="mt-4 rounded-xl bg-peach/40 px-4 py-3 text-sm">

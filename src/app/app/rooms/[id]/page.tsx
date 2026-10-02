@@ -2,11 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
+  addFavorite,
   createContactLead,
   createVisitLead,
   getRoom,
+  listMyLeads,
+  listReviews,
+  openConversation,
+  postReview,
+  removeFavorite,
+  reviewSummary,
+  type Review,
+  type ReviewSummary,
   type Room,
 } from "@/lib/api";
 import { DEMO_ROOMS } from "@/lib/demo-rooms";
@@ -17,10 +26,17 @@ export default function RoomDetailPage() {
   const [room, setRoom] = useState<Room | null>(null);
   const [demo, setDemo] = useState(false);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const [phone, setPhone] = useState<string | null>(null);
   const [slot, setSlot] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [fav, setFav] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [summary, setSummary] = useState<ReviewSummary | null>(null);
+  const [rating, setRating] = useState("5");
+  const [reviewBody, setReviewBody] = useState("");
+  const [reviewMsg, setReviewMsg] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -35,6 +51,76 @@ export default function RoomDetailPage() {
     }
     load();
   }, [id]);
+
+  useEffect(() => {
+    if (!room || demo) return;
+    reviewSummary(room.id)
+      .then(setSummary)
+      .catch(() => {});
+    listReviews(room.id)
+      .then(setReviews)
+      .catch(() => {});
+  }, [room, demo]);
+
+  async function toggleFav() {
+    if (!room) return;
+    setBusy(true);
+    try {
+      if (fav) {
+        await removeFavorite(room.id);
+        setFav(false);
+      } else {
+        await addFavorite(room.id);
+        setFav(true);
+      }
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Could not save favorite.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function startChat() {
+    if (!room) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const leads = await listMyLeads().catch(() => []);
+      const existing = leads.find((l) => l.room_id === room.id);
+      const leadId =
+        existing?.id ?? (await createContactLead(room.id)).lead?.id;
+      if (!leadId) throw new Error("Could not start a chat for this room.");
+      const conv = await openConversation(leadId);
+      router.push(`/app/chats/${conv.id}`);
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Could not open chat.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitReview(e: React.FormEvent) {
+    e.preventDefault();
+    if (!room) return;
+    setReviewMsg(null);
+    try {
+      const created = await postReview(
+        room.id,
+        Number(rating),
+        reviewBody || undefined,
+      );
+      setReviews((rs) => [created, ...rs]);
+      setReviewBody("");
+      reviewSummary(room.id)
+        .then(setSummary)
+        .catch(() => {});
+      setReviewMsg("Review posted. Thanks!");
+    } catch (err) {
+      setReviewMsg(
+        err instanceof Error ? err.message : "Could not post review.",
+      );
+    }
+  }
 
   async function revealContact() {
     if (!room) return;
@@ -92,7 +178,18 @@ export default function RoomDetailPage() {
         </p>
       )}
 
-      <h1 className="mt-3 text-3xl font-bold">{room.title}</h1>
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+        <h1 className="text-3xl font-bold">{room.title}</h1>
+        {!demo && (
+          <button
+            onClick={toggleFav}
+            disabled={busy}
+            className="rounded-full border-2 border-navy px-5 py-1.5 text-sm font-semibold hover:bg-navy hover:text-white disabled:opacity-60"
+          >
+            {fav ? "♥ Saved" : "♡ Save"}
+          </button>
+        )}
+      </div>
       <p className="mt-1 text-muted">
         {room.locality}
         {room.area ? ` · ${room.area}` : ""}
@@ -177,6 +274,15 @@ export default function RoomDetailPage() {
           >
             Request visit
           </button>
+          {!demo && (
+            <button
+              onClick={startChat}
+              disabled={busy}
+              className="mt-2 w-full rounded-xl bg-cream px-4 py-2 font-semibold hover:bg-cream-dark disabled:opacity-60"
+            >
+              Chat about this room
+            </button>
+          )}
           {message && <p className="mt-3 text-sm text-muted">{message}</p>}
           <p className="mt-3 text-xs text-muted">
             Contact & visits need a student login.{" "}
@@ -186,6 +292,69 @@ export default function RoomDetailPage() {
           </p>
         </div>
       </div>
+
+      {!demo && (
+        <section className="mt-10">
+          <h2 className="text-2xl font-bold">
+            Reviews
+            {summary && summary.count > 0 && (
+              <span className="ml-2 text-base font-medium text-muted">
+                ★ {summary.avg_rating?.toFixed(1)} ({summary.count})
+              </span>
+            )}
+          </h2>
+          <form
+            onSubmit={submitReview}
+            className="mt-4 flex flex-col gap-2 rounded-2xl border border-navy/10 bg-white p-4 sm:flex-row sm:items-center"
+          >
+            <select
+              value={rating}
+              onChange={(e) => setRating(e.target.value)}
+              className="rounded-xl border border-navy/15 bg-white px-3 py-2"
+              aria-label="Rating"
+            >
+              {[5, 4, 3, 2, 1].map((n) => (
+                <option key={n} value={n}>
+                  {n} ★
+                </option>
+              ))}
+            </select>
+            <input
+              value={reviewBody}
+              onChange={(e) => setReviewBody(e.target.value)}
+              placeholder="What did you think of this room? (needs login)"
+              maxLength={2000}
+              className="flex-1 rounded-xl border border-navy/15 px-3 py-2"
+            />
+            <button
+              type="submit"
+              className="rounded-xl bg-navy px-5 py-2 font-semibold text-white hover:bg-navy-light"
+            >
+              Post
+            </button>
+          </form>
+          {reviewMsg && <p className="mt-2 text-sm text-muted">{reviewMsg}</p>}
+          <div className="mt-4 space-y-3">
+            {reviews.map((r) => (
+              <div
+                key={r.id}
+                className="rounded-2xl border border-navy/10 bg-white p-4"
+              >
+                <p className="text-sm font-bold">
+                  {"★".repeat(r.rating)}
+                  {"☆".repeat(5 - r.rating)}
+                  {r.student_name && (
+                    <span className="ml-2 font-medium text-muted">
+                      {r.student_name}
+                    </span>
+                  )}
+                </p>
+                {r.body && <p className="mt-1 text-sm">{r.body}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
