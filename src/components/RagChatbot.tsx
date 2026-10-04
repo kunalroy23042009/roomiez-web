@@ -21,7 +21,7 @@ export default function RagChatbot({
   apiUrl = process.env.NEXT_PUBLIC_RAG_API_URL || "http://localhost:8000/chat/stream",
   title = "Roomiez Assistant",
   placeholder = "Ask about notices...",
-  logoSrc = "/logo.png",
+  logoSrc = "/chatbot-logo.png",
   primaryColor = "#101c34",
   width = 360,
   height = 480,
@@ -133,30 +133,45 @@ export default function RagChatbot({
       {!isOpen && (
         <button
           onClick={toggle}
+          aria-label="Open chat"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "12px 18px",
-            background: primaryColor,
-            color: "#fff",
-            border: "none",
-            borderRadius: 9999,
+            position: "relative",
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            border: `3px solid ${primaryColor}`,
+            background: "#fff",
             cursor: "pointer",
-            fontWeight: 600,
-            fontSize: 15,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+            padding: 6,
+            boxShadow: "0 6px 24px rgba(0,0,0,0.25)",
             transition: "transform 0.2s",
+            animation: "chatbot-pulse 2.4s ease-out infinite",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.08)")}
           onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
+          <style>{`@keyframes chatbot-pulse {
+            0% { box-shadow: 0 6px 24px rgba(0,0,0,0.25), 0 0 0 0 rgba(16,28,52,0.35); }
+            70% { box-shadow: 0 6px 24px rgba(0,0,0,0.25), 0 0 0 14px rgba(16,28,52,0); }
+            100% { box-shadow: 0 6px 24px rgba(0,0,0,0.25), 0 0 0 0 rgba(16,28,52,0); }
+          }`}</style>
           <img
             src={logoSrc}
-            alt="Logo"
-            style={{ width: 22, height: 22, borderRadius: 4 }}
+            alt="Chat with Roomiez"
+            style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block" }}
           />
-          Chat with Roomiez
+          <span
+            style={{
+              position: "absolute",
+              top: 2,
+              right: 2,
+              width: 14,
+              height: 14,
+              borderRadius: "50%",
+              background: "#22c55e",
+              border: "2px solid #fff",
+            }}
+          />
         </button>
       )}
 
@@ -187,7 +202,7 @@ export default function RagChatbot({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <img src={logoSrc} alt="Logo" style={{ width: 26, height: 26, borderRadius: 6 }} />
+              <img src={logoSrc} alt="Logo" style={{ width: 28, height: 28, borderRadius: "50%", background: "#fff", padding: 2 }} />
               <span style={{ fontWeight: 600, fontSize: 16 }}>{title}</span>
             </div>
             <button
