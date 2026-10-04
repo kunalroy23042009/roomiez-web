@@ -30,6 +30,9 @@ export default function Footer() {
           <Link href="/privacy" className="w-fit hover:text-peach">
             Privacy
           </Link>
+          <Link href="/admin/rag" className="w-fit hover:text-peach">
+            RAG Admin
+          </Link>
         </nav>
         <div className="text-sm">
           <p className="font-mono text-xs tracking-widest text-white/50">
