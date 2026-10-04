@@ -73,32 +73,49 @@ export default function RagChatbot({
       if (!res.ok) throw new Error("API error");
 
       const reader = res.body?.getReader();
+      if (!reader) throw new Error("No stream.");
       const decoder = new TextDecoder();
       let buffer = "";
       let assistantMessage = "";
-      let messageIndex = messages.length;
+      // Index captured inside the updater — never stale.
+      const indexRef: { i: number | null } = { i: null };
+      setMessages((prev) => {
+        indexRef.i = prev.length;
+        return [...prev, { role: "assistant", content: "" }];
+      });
+      const paint = (text: string) =>
+        setMessages((prev) => {
+          if (indexRef.i === null || indexRef.i >= prev.length) return prev;
+          const next = [...prev];
+          next[indexRef.i] = { role: "assistant", content: text };
+          return next;
+        });
 
-      // Add placeholder for assistant message
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      // SSE framing that survives newlines inside a chunk.
+      const pushEvent = (raw: string) => {
+        const text = raw
+          .split("\n")
+          .filter((l) => l.startsWith("data: "))
+          .map((l) => l.slice(6))
+          .join("\n");
+        if (!text) return;
+        if (text.startsWith("[error:")) {
+          throw new Error(text);
+        }
+        assistantMessage += text;
+        paint(assistantMessage);
+      };
 
-      while (reader) {
+      for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const chunk = line.slice(6);
-            assistantMessage += chunk;
-            setMessages((prev) => {
-              const next = [...prev];
-              next[messageIndex] = { role: "assistant", content: assistantMessage };
-              return next;
-            });
-          }
-        }
+        const events = buffer.split("\n\n");
+        buffer = events.pop() || "";
+        for (const ev of events) pushEvent(ev);
       }
+      if (buffer.trim()) pushEvent(buffer);
+      if (!assistantMessage.trim()) throw new Error("Empty reply.");
 
       // Update history with final answer
       historyRef.current.push({ role: "assistant", content: assistantMessage });
@@ -107,9 +124,18 @@ export default function RagChatbot({
       }
     } catch (err) {
       console.error(err);
+      const msg = err instanceof Error ? err.message : String(err);
+      const friendly = msg.startsWith("[error:")
+        ? "The assistant had trouble answering that — try rephrasing."
+        : "Couldn't reach the assistant — check your connection and try again.";
       setMessages((prev) => {
         const next = [...prev];
-        next[next.length - 1] = { role: "assistant", content: "Error — please try again." };
+        const last = next[next.length - 1];
+        if (last && last.role === "assistant") {
+          next[next.length - 1] = { role: "assistant", content: friendly };
+        } else {
+          next.push({ role: "assistant", content: friendly });
+        }
         return next;
       });
     } finally {
@@ -178,8 +204,8 @@ export default function RagChatbot({
       {isOpen && (
         <div
           style={{
-            width,
-            height,
+            width: `min(${width}px, calc(100vw - 32px))`,
+            height: `min(${height}px, calc(100dvh - 120px))`,
             background: "#fff",
             border: "1px solid #e0e0e0",
             borderRadius: 16,
