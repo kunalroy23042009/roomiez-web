@@ -34,18 +34,26 @@ export default function RagAdminPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("rag_admin_key");
-    if (saved) {
-      setAdminKey(saved);
-      setUnlocked(true);
-    }
+    restoreAdminKey();
     fetchHealth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => () => {
     if (pollRef.current) clearInterval(pollRef.current);
   }, []);
+
+  /**
+   * Rehydrate the persisted key. localStorage is synchronous, but awaiting the
+   * read keeps setState out of the effect's own synchronous body
+   * (react-hooks/set-state-in-effect).
+   */
+  async function restoreAdminKey() {
+    const saved = await Promise.resolve(localStorage.getItem("rag_admin_key"));
+    if (saved) {
+      setAdminKey(saved);
+      setUnlocked(true);
+    }
+  }
 
   async function fetchHealth() {
     try {

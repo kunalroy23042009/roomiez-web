@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 
 interface Message {
   role: "user" | "assistant";
@@ -181,9 +182,11 @@ export default function RagChatbot({
             70% { box-shadow: 0 6px 24px rgba(0,0,0,0.25), 0 0 0 14px rgba(16,28,52,0); }
             100% { box-shadow: 0 6px 24px rgba(0,0,0,0.25), 0 0 0 0 rgba(16,28,52,0); }
           }`}</style>
-          <img
+          <Image
             src={logoSrc}
             alt="Chat with Roomiez"
+            width={46}
+            height={46}
             style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block" }}
           />
           <span
@@ -228,7 +231,7 @@ export default function RagChatbot({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <img src={logoSrc} alt="Logo" style={{ width: 28, height: 28, borderRadius: "50%", background: "#fff", padding: 2 }} />
+              <Image src={logoSrc} alt="Logo" width={28} height={28} style={{ width: 28, height: 28, borderRadius: "50%", background: "#fff", padding: 2 }} />
               <span style={{ fontWeight: 600, fontSize: 16 }}>{title}</span>
             </div>
             <button

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Room, RoomFilters } from "@/lib/api";
-import { loadRooms } from "@/lib/rooms";
+import { loadRooms, type RoomsResult } from "@/lib/rooms";
 import RoomCard, { ROOM_TYPES } from "@/components/RoomCard";
 
 export default function BrowsePage() {
@@ -14,10 +14,7 @@ export default function BrowsePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function search(f: RoomFilters) {
-    setLoading(true);
-    setError(null);
-    const res = await loadRooms(f);
+  function applyResult(res: RoomsResult) {
     setRooms(res.rooms);
     setTotal(res.total);
     setDemo(res.demo);
@@ -25,9 +22,16 @@ export default function BrowsePage() {
     setLoading(false);
   }
 
+  async function search(f: RoomFilters) {
+    setLoading(true);
+    setError(null);
+    applyResult(await loadRooms(f));
+  }
+
+  // Initial load: state is only touched from the promise callback, never
+  // synchronously in the effect body (react-hooks/set-state-in-effect).
   useEffect(() => {
-    search({});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadRooms({}).then(applyResult);
   }, []);
 
   function update<K extends keyof RoomFilters>(key: K, value: string) {

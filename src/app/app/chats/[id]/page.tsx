@@ -17,15 +17,20 @@ export default function ThreadPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
-  const refresh = useCallback(async () => {
-    try {
-      const msgs = await listMessages(id);
-      setMessages(msgs);
-      setMessage(null);
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not load messages.");
-    }
-  }, [id]);
+  // Promise-chain (not async/await) so setState only runs in a callback —
+  // keeps `refresh` callable from the effect (react-hooks/set-state-in-effect).
+  const refresh = useCallback(
+    () =>
+      listMessages(id)
+        .then((msgs) => {
+          setMessages(msgs);
+          setMessage(null);
+        })
+        .catch((e: unknown) => {
+          setMessage(e instanceof Error ? e.message : "Could not load messages.");
+        }),
+    [id],
+  );
 
   useEffect(() => {
     refresh();
