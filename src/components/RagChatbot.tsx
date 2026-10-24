@@ -6,6 +6,7 @@ import Image from "next/image";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  failed?: boolean;
 }
 
 interface ChatbotProps {
@@ -18,10 +19,15 @@ interface ChatbotProps {
   height?: number;
 }
 
+interface Citation {
+  name: string;
+  page: string;
+}
+
 export default function RagChatbot({
-  apiUrl = process.env.NEXT_PUBLIC_RAG_API_URL || "http://localhost:8000/chat/stream",
+  apiUrl = process.env.NEXT_PUBLIC_RAG_API_URL || "http://localhost:8000/api/v1/assistant/chat",
   title = "Roomiez Assistant",
-  placeholder = "Ask about notices...",
+  placeholder = "Ask about rooms, pricing, visits, safety...",
   logoSrc = "/chatbot-logo.png",
   primaryColor = "#101c34",
   width = 360,
@@ -43,13 +49,62 @@ export default function RagChatbot({
     scrollToBottom();
   }, [messages]);
 
-  const addMessage = (role: "user" | "assistant", content: string) => {
-    setMessages((prev) => [...prev, { role, content }]);
+  const addMessage = (role: "user" | "assistant", content: string, failed = false) => {
+    setMessages((prev) => [...prev, { role, content, failed }]);
     historyRef.current.push({ role, content });
     // Keep last 8 turns (16 messages max)
     if (historyRef.current.length > 16) {
       historyRef.current = historyRef.current.slice(-16);
     }
+  };
+
+  // Extract citations from answer text
+  const extractCitations = (answer: string) => {
+    const citeRe = /\(([^()]+?\.(?:pdf|xlsx?|docx?|csv|png|jpe?g|webp)),?\s*p\.?\s*(\d+)\)/gi;
+    const seen = new Set<string>();
+    const out: Array<{ name: string; page: string }> = [];
+    for (const m of answer.matchAll(citeRe)) {
+      const key = `${m[1]}#${m[2]}`;
+      if (seen.add(key)) {
+        out.push({ name: m[1].trim(), page: m[2] });
+      }
+      if (out.length >= 6) break;
+    }
+    return out;
+  };
+
+  const docUrl = (name: string) =>
+    `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1"}/assistant/documents/${encodeURIComponent(name)}`;
+
+  // Helper to render citation chips for assistant messages
+  const renderCitations = (content: string) => {
+    const sources = extractCitations(content);
+    if (sources.length === 0) return null;
+    return (
+      <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {sources.map((s) => (
+          <a
+            key={`${s.name}#${s.page}`}
+            href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1"}/assistant/documents/${encodeURIComponent(s.name)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "2px 8px",
+              fontSize: 11,
+              borderRadius: 100,
+              background: "#e0e0e0",
+              color: "#333",
+              textDecoration: "none",
+              border: "1px solid #d0d0d0",
+            }}
+          >
+            {s.name} · p.{s.page}
+          </a>
+        ))}
+      </div>
+    );
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -73,56 +128,9 @@ export default function RagChatbot({
 
       if (!res.ok) throw new Error("API error");
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No stream.");
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let assistantMessage = "";
-      // Index captured inside the updater — never stale.
-      const indexRef: { i: number | null } = { i: null };
-      setMessages((prev) => {
-        indexRef.i = prev.length;
-        return [...prev, { role: "assistant", content: "" }];
-      });
-      const paint = (text: string) =>
-        setMessages((prev) => {
-          if (indexRef.i === null || indexRef.i >= prev.length) return prev;
-          const next = [...prev];
-          next[indexRef.i] = { role: "assistant", content: text };
-          return next;
-        });
-
-      // SSE framing that survives newlines inside a chunk.
-      const pushEvent = (raw: string) => {
-        const text = raw
-          .split("\n")
-          .filter((l) => l.startsWith("data: "))
-          .map((l) => l.slice(6))
-          .join("\n");
-        if (!text) return;
-        if (text.startsWith("[error:")) {
-          throw new Error(text);
-        }
-        assistantMessage += text;
-        paint(assistantMessage);
-      };
-
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const events = buffer.split("\n\n");
-        buffer = events.pop() || "";
-        for (const ev of events) pushEvent(ev);
-      }
-      if (buffer.trim()) pushEvent(buffer);
-      if (!assistantMessage.trim()) throw new Error("Empty reply.");
-
-      // Update history with final answer
-      historyRef.current.push({ role: "assistant", content: assistantMessage });
-      if (historyRef.current.length > 16) {
-        historyRef.current = historyRef.current.slice(-16);
-      }
+      const data = await res.json();
+      const answer = data.answer || "Assistant gave no answer. Try again.";
+      addMessage("assistant", answer);
     } catch (err) {
       console.error(err);
       const msg = err instanceof Error ? err.message : String(err);
@@ -133,9 +141,9 @@ export default function RagChatbot({
         const next = [...prev];
         const last = next[next.length - 1];
         if (last && last.role === "assistant") {
-          next[next.length - 1] = { role: "assistant", content: friendly };
+          next[next.length - 1] = { role: "assistant", content: friendly, failed: true };
         } else {
-          next.push({ role: "assistant", content: friendly });
+          next.push({ role: "assistant", content: friendly, failed: true });
         }
         return next;
       });
@@ -145,6 +153,9 @@ export default function RagChatbot({
   };
 
   const toggle = () => setIsOpen((o) => !o);
+
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
 
   return (
     <div
@@ -159,7 +170,12 @@ export default function RagChatbot({
     >
       {!isOpen && (
         <button
-          onClick={toggle}
+          onClick={() => {
+            setIsOpen(true);
+            if (messages.length === 0) {
+              setMessages([{ role: "assistant", content: "Hi! I'm the Roomiez Assistant. Ask me about rooms, pricing, visits, safety or any notice." }]);
+            }
+          }}
           aria-label="Open chat"
           style={{
             position: "relative",
@@ -208,7 +224,7 @@ export default function RagChatbot({
         <div
           style={{
             width: `min(${width}px, calc(100vw - 32px))`,
-            height: `min(${height}px, calc(100dvh - 120px))`,
+            maxHeight: `calc(100dvh - 120px)`,
             background: "#fff",
             border: "1px solid #e0e0e0",
             borderRadius: 16,
@@ -231,17 +247,20 @@ export default function RagChatbot({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Image src={logoSrc} alt="Logo" width={28} height={28} style={{ width: 28, height: 28, borderRadius: "50%", background: "#fff", padding: 2 }} />
-              <span style={{ fontWeight: 600, fontSize: 16 }}>{title}</span>
+              <Image src={logoSrc} alt="Logo" width={32} height={32} style={{ width: 32, height: 32, borderRadius: "50%", background: "#fff", padding: 2 }} />
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 16 }}>{title}</div>
+                <div style={{ fontSize: 12, opacity: 0.8 }}>Ask about rooms, rent, visits, safety…</div>
+              </div>
             </div>
             <button
-              onClick={toggle}
+              onClick={() => setIsOpen(false)}
               style={{
                 background: "transparent",
                 border: "none",
                 color: "#fff",
                 cursor: "pointer",
-                fontSize: 20,
+                fontSize: 24,
                 lineHeight: 1,
                 padding: 4,
               }}
@@ -270,7 +289,7 @@ export default function RagChatbot({
                   marginTop: 40,
                 }}
               >
-                Hi! Ask me about exam dates, fees, events, placements, or any notice.
+                Hi! I'm the Roomiez Assistant. Ask me about rooms, pricing, visits, safety or any notice.
               </div>
             )}
             {messages.map((msg, i) => (
@@ -279,16 +298,82 @@ export default function RagChatbot({
                 style={{
                   alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
                   maxWidth: "85%",
-                  padding: "10px 14px",
-                  borderRadius: msg.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                  background: msg.role === "user" ? primaryColor : "#f6f1e5",
-                  color: msg.role === "user" ? "#fff" : "#101c34",
-                  fontSize: 14,
-                  lineHeight: 1.5,
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
                 }}
               >
-                {msg.content}
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: msg.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                    background: msg.role === "user" ? primaryColor : "#f6f1e5",
+                    color: msg.role === "user" ? "#fff" : "#101c34",
+                    fontSize: 14,
+                    lineHeight: 1.5,
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                    position: "relative",
+                  }}
+                >
+                  <div style={{ marginBottom: 4 }}>{msg.content}</div>
+
+                  {msg.failed && (
+                    <button
+                      onClick={() => {
+                        if (i > 0 && messages[i - 1].role === "user") {
+                          // Retry logic could be implemented here
+                        }
+                      }}
+                      style={{
+                        marginTop: 4,
+                        padding: "4px 8px",
+                        fontSize: 11,
+                        border: "none",
+                        background: "transparent",
+                        color: msg.role === "user" ? "rgba(255,255,255,0.7)" : primaryColor,
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      Try again
+                    </button>
+                  )}
+
+                  {/* Citations */}
+                  {msg.role === "assistant" && renderCitations(msg.content)}
+
+                  {/* Timestamp & Copy */}
+
+                  {/* Timestamp & Copy */}
+                  <div
+                    style={{
+                      marginTop: 6,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontSize: 10,
+                      opacity: 0.6,
+                    }}
+                  >
+                    <span>{formatTime(new Date())}</span>
+                    {msg.role !== "user" && (
+                      <button
+                        onClick={() => navigator.clipboard.writeText(msg.content)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 2,
+                          color: "inherit",
+                          opacity: 0.5,
+                        }}
+                        title="Copy message"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
