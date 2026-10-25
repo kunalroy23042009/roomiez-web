@@ -35,9 +35,10 @@ export default function BrowsePage() {
   // Initial load: state is only touched from the promise callback, never
   // synchronously in the effect body (react-hooks/set-state-in-effect).
   useEffect(() => {
-    const id = ++requestId.current;
-    loadRooms({}).then(result => { if (id === requestId.current) applyResult(result); });
-    return () => { requestId.current++; };
+    const request = requestId;
+    const id = ++request.current;
+    loadRooms({}).then(result => { if (id === request.current) applyResult(result); });
+    return () => { request.current++; };
   }, []);
 
   function update<K extends keyof RoomFilters>(key: K, value: string) {
