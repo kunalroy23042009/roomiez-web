@@ -41,7 +41,7 @@ export interface RoomFilters {
 }
 
 export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getAccessToken();
@@ -59,6 +59,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
       typeof body?.detail === "string" ? body.detail : `Request failed (${res.status}).`;
     throw new Error(detail);
   }
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 

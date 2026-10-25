@@ -1,5 +1,4 @@
 import { listRooms, type Room, type RoomFilters } from "./api";
-import { filterDemoRooms } from "./demo-rooms";
 
 export interface RoomsResult {
   rooms: Room[];
@@ -8,17 +7,16 @@ export interface RoomsResult {
   error: string | null;
 }
 
-/** Live rooms from the API, demo rooms when unreachable/unauthenticated. */
+/** Inventory comes exclusively from the shared mobile backend. */
 export async function loadRooms(filters: RoomFilters): Promise<RoomsResult> {
   try {
     const res = await listRooms(filters);
     return { rooms: res.items, total: res.total, demo: false, error: null };
   } catch (e) {
-    const items = filterDemoRooms(filters);
     return {
-      rooms: items,
-      total: items.length,
-      demo: true,
+      rooms: [],
+      total: 0,
+      demo: false,
       error:
         e instanceof Error ? e.message : "Could not reach the Roomiez API.",
     };

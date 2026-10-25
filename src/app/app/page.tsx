@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Room, RoomFilters } from "@/lib/api";
 import { loadRooms, type RoomsResult } from "@/lib/rooms";
@@ -10,28 +10,34 @@ export default function BrowsePage() {
   const [filters, setFilters] = useState<RoomFilters>({});
   const [rooms, setRooms] = useState<Room[]>([]);
   const [total, setTotal] = useState(0);
-  const [demo, setDemo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestId = useRef(0);
+  const [page, setPage] = useState(1);
 
   function applyResult(res: RoomsResult) {
     setRooms(res.rooms);
     setTotal(res.total);
-    setDemo(res.demo);
-    setError(res.demo ? `${res.error} Showing demo rooms.` : null);
+    setError(res.error);
     setLoading(false);
   }
 
   async function search(f: RoomFilters) {
+    const id = ++requestId.current;
     setLoading(true);
     setError(null);
-    applyResult(await loadRooms(f));
+    const result = await loadRooms(f);
+    if (id !== requestId.current) return;
+    setPage(f.page || 1);
+    applyResult(result);
   }
 
   // Initial load: state is only touched from the promise callback, never
   // synchronously in the effect body (react-hooks/set-state-in-effect).
   useEffect(() => {
-    loadRooms({}).then(applyResult);
+    const id = ++requestId.current;
+    loadRooms({}).then(result => { if (id === requestId.current) applyResult(result); });
+    return () => { requestId.current++; };
   }, []);
 
   function update<K extends keyof RoomFilters>(key: K, value: string) {
@@ -63,10 +69,9 @@ export default function BrowsePage() {
         ))}
       </div>
 
-      {demo && (
+      {error && (
         <p className="mt-4 rounded-xl border border-peach/30 bg-peach/15 px-4 py-3 text-sm">
-          Demo data — {error} Start the FastAPI backend and log in for live
-          listings.
+          {error} <button onClick={() => search(filters)} className="underline">Try again</button>
         </p>
       )}
 
@@ -129,6 +134,11 @@ export default function BrowsePage() {
             {rooms.map((r) => (
               <RoomCard key={r.id} room={r} />
             ))}
+          </div>
+          <div className="mt-6 flex items-center justify-center gap-4">
+            <button disabled={page <= 1 || loading} className="rounded-full border border-navy/20 px-4 py-2 disabled:opacity-40" onClick={() => search({ ...filters, page: page - 1 })}>Previous</button>
+            <span className="text-sm">Page {page} of {Math.max(1, Math.ceil(total / 24))}</span>
+            <button disabled={page * 24 >= total || loading} className="rounded-full border border-navy/20 px-4 py-2 disabled:opacity-40" onClick={() => search({ ...filters, page: page + 1 })}>Next</button>
           </div>
         </>
       )}
